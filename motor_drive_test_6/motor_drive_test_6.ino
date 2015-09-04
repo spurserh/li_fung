@@ -82,13 +82,17 @@ void run_const_speed(const int winding_quarters[2][4],
 
 #if 1
 void loop() {
-  const int winding = 0;
-  go_dead(winding);
-  delayMicroseconds(50);
+  const int winding = 0;  
+  const unsigned long output_cycle_micros = 20000;
+  const unsigned long pwm_cycle_micros = 250;
   
-  const unsigned long half_pulse_micros = 250;
+  static int last_state = 0;
+  int this_state = 0;
   
+  const float t = float(
+
   for(unsigned long ml_s = millis();(millis() - ml_s) < 10;ml_s) {
+    /*
     digitalWrite(pullups_positive[winding], HIGH);
     digitalWrite(pulldowns_positive[winding], LOW);
     delayMicroseconds(half_pulse_micros);
@@ -98,18 +102,11 @@ void loop() {
     digitalWrite(pullups_positive[winding], LOW);
     digitalWrite(pulldowns_positive[winding], HIGH);
     delayMicroseconds(half_pulse_micros);
+    */
   }
-  
-  /*
-  digitalWrite(pullups_positive[winding], HIGH);
-  digitalWrite(pulldowns_positive[winding], LOW);
-  delay(10);
-  */
-  
   go_dead(winding);
   delayMicroseconds(50);
-  
-  
+  /*
   for(unsigned long ml_s = millis();(millis() - ml_s) < 10;ml_s) {
     digitalWrite(pullups_negative[winding], HIGH);
     digitalWrite(pulldowns_negative[winding], LOW);
@@ -121,12 +118,11 @@ void loop() {
     digitalWrite(pulldowns_negative[winding], HIGH);
     delayMicroseconds(half_pulse_micros);
   }
-  /*
-  digitalWrite(pullups_negative[winding], HIGH);
-  digitalWrite(pulldowns_negative[winding], LOW);
-  delay(10);
   */
   
+  go_dead(winding);
+  delayMicroseconds(50);
+  delay(10);
 }
 #endif
 

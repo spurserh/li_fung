@@ -57,7 +57,6 @@ void setup() {
   }
 }
 
-/*
 const int winding_quarters_forward[2][4] = {
   {1,1,0,0},
   {0,1,1,0},
@@ -66,17 +65,6 @@ const int winding_quarters_forward[2][4] = {
 const int winding_quarters_reverse[2][4] = {
   {0,1,1,0},
   {1,1,0,0},
-};
-*/
-
-const int winding_quarters_forward[2][4] = {
-  {0,1,0,-1},
-  {1,0,-1,0},
-};
-
-const int winding_quarters_reverse[2][4] = {
-  {1,0,-1,0},
-  {0,1,0,-1},
 };
 
 int quarter_before(int q) {
@@ -98,13 +86,13 @@ void run_const_speed(const int winding_quarters[2][4],
          winding_quarters[winding][quarter_before(quarter)]) {
         go_dead(winding);
         delayMicroseconds(50);
-        if(winding_quarters[winding][quarter] > 0) {
+        if(winding_quarters[winding][quarter]) {
           digitalWrite(pullups_negative[winding], LOW);
           digitalWrite(pulldowns_negative[winding], HIGH);
           
           digitalWrite(pullups_positive[winding], HIGH);
           digitalWrite(pulldowns_positive[winding], LOW);
-        } else if(winding_quarters[winding][quarter] < 0) {
+        } else {
           digitalWrite(pullups_positive[winding], LOW);
           digitalWrite(pulldowns_positive[winding], HIGH);
           
@@ -124,7 +112,84 @@ char output_state(char output_val, char sawtooth_val) {
     return (output_val > sawtooth_val) ? 1 : 0;
   else
     return (output_val < sawtooth_val) ? -1 : 0;
+}  
+
+#if 1
+void loop() {
+//  const unsigned long cycle_micros_min = 12500;
+  const unsigned long cycle_micros_min = 10000;
+  const unsigned long cycle_micros_max = 22000;
+//  const unsigned long cycle_micros_max = 25000;
+  
+  static unsigned long cycle_micros = 0;
+  static int winding_quarters[2][4];
+  
+  if (Serial.available() > 0) {
+    unsigned char incomingByteU = Serial.read();
+    char incomingByte = *reinterpret_cast<char*>(&incomingByteU);
+    if(incomingByte == -128) {
+      cycle_micros = 0;
+    } else {
+      cycle_micros = (unsigned long)(cycle_micros_min + 
+        (1.0f - abs(incomingByte) / 127.0f) * float(cycle_micros_max - cycle_micros_min));
+      memcpy(&winding_quarters[0][0], 
+             (incomingByte >= 0) ? &winding_quarters_forward[0][0] : &winding_quarters_reverse[0][0],
+             sizeof(winding_quarters));
+    }
+  }
+  
+  if(cycle_micros != 0) {
+    const unsigned long quarter_micros = cycle_micros / 4;
+    for(int quarter = 0;quarter<4;++quarter) {
+      for(int winding=0;winding<2;++winding) {
+        
+/*        Serial.print("quarter ");
+        Serial.print(quarter);
+        Serial.print(" winding ");
+        Serial.print(winding);
+        Serial.print(": ");
+        Serial.println(winding_quarters[winding][quarter]);*/
+        
+        if(winding_quarters[winding][quarter] !=
+           winding_quarters[winding][quarter_before(quarter)]) {
+          go_dead(winding);
+          delayMicroseconds(50);
+          if(winding_quarters[winding][quarter]) {
+            digitalWrite(pullups_negative[winding], LOW);
+            digitalWrite(pulldowns_negative[winding], HIGH);
+            
+            digitalWrite(pullups_positive[winding], HIGH);
+            digitalWrite(pulldowns_positive[winding], LOW);
+          } else {
+            digitalWrite(pullups_positive[winding], LOW);
+            digitalWrite(pulldowns_positive[winding], HIGH);
+            
+            digitalWrite(pullups_negative[winding], HIGH);
+            digitalWrite(pulldowns_negative[winding], LOW);
+          }
+        }
+      }
+      delayMicroseconds(quarter_micros);
+    }
+  } else {
+    go_dead_all();
+  }
+
+#if 0
+  if (Serial.available() > 0) {
+    
+    unsigned char incomingByteU = Serial.read();
+    char incomingByte = *reinterpret_cast<char*>(&incomingByteU);
+    const unsigned long cycle_micros = (unsigned long)(cycle_micros_min + 
+      (1.0f - abs(incomingByte) / 127.0f) * float(cycle_micros_max - cycle_micros_min));
+      
+    run_const_speed((incomingByte >= 0) ? winding_quarters_forward : winding_quarters_reverse,
+                    cycle_micros,
+                    300);
+  }
+#endif
 }
+#endif
 
 #if 0
 void loop() {
@@ -188,16 +253,10 @@ void loop() {
 #if 0
 // Continuous variable speed test
 void loop() {
-/*  
   const unsigned long cycle_micros_min = 12500;
   const unsigned long cycle_micros_max = 22000;
 
-*/
-TODO: quarters
-  const unsigned long cycle_micros_min = 12500;
-  const unsigned long cycle_micros_max = 22000;
-
-  const unsigned long test_period_millis = 10000;
+  const unsigned long test_period_millis = 5000;
   const unsigned long cycle_micros = cycle_micros_min + 
       int((cycle_micros_max - cycle_micros_min) * (0.5f + 0.5f * sin((millis()%test_period_millis) * (6.28f/test_period_millis))));
   const unsigned long quarter_micros = cycle_micros / 4;
@@ -253,13 +312,15 @@ void loop() {
 }
 #endif
 
-#if 1
+#if 0
 void loop() {
   run_const_speed(winding_quarters_forward,
                   20000,
                   100000);
 }
 #endif
+
+
 
 
 

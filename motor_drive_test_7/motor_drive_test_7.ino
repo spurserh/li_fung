@@ -1,8 +1,12 @@
 
-const unsigned int pullups_positive[2] = {8, 7};
-const unsigned int pulldowns_positive[2] = {9, 6};
-const unsigned int pullups_negative[2] = {5, 3};
-const unsigned int pulldowns_negative[2] = {4, 2};
+
+const int reboot_pin = 15;
+
+const unsigned int pullups_positive[2] = {4,8};
+const unsigned int pulldowns_positive[2] = {5,9};
+const unsigned int pullups_negative[2] = {2,6};
+const unsigned int pulldowns_negative[2] = {3,7};
+const int voltage_in = 10;
 
 static char sine_values[256];
 
@@ -29,7 +33,24 @@ char sawtooth(unsigned char t) {
 void setup() {
 
   Serial.begin(9600);
+  while(!Serial);
   Serial.println("------- Rebooted -----");
+  
+  while(!Serial.available());
+  const char cmd = Serial.read();
+  Serial.print("Got command ");
+  Serial.println(cmd);
+  if(cmd == 'r') {
+    pinMode(reboot_pin, OUTPUT);
+   digitalWrite(reboot_pin, HIGH);
+   while(true);
+  } else if(cmd == 'g') {
+    // Go
+  } else {
+    while(true);
+  }
+  
+  pinMode(voltage_in, INPUT);
   
   for(unsigned int i=0;i<256;++i) {
     sine_values[i] = char(127.0f * sin((float(i) / 255.0f) * 2.0f * 3.141592f));
@@ -323,12 +344,26 @@ void loop() {
 
 // Up/down
 void loop() {
+  /*
   run_const_speed(winding_quarters_forward,
                   20000,
                   1600);
   run_const_speed(winding_quarters_reverse,
                   20000,
-                  1500);
+                  1600);
+                  */
+  
+  Serial.print("Voltage ");
+  Serial.println(digitalRead(voltage_in));
+  Serial.print("millis ");
+  Serial.println(millis());
+  
+  run_const_speed(winding_quarters_forward,
+                  20000,
+                  1600);
+  run_const_speed(winding_quarters_reverse,
+                  20000,
+                  1600);
 }
 
 
